@@ -1,6 +1,9 @@
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import status
+
+from tracker.notifications.notify_bug import notify_bug_created, notify_bug_updated, notify_bug_closed
+from tracker.notifications.notify_comment import notify_comment_added
 from .models import Project, Bug, Comment
 from .serializers import ProjectSerializer, BugSerializer, CommentSerializer
 from django.contrib.auth.models import User
@@ -76,7 +79,10 @@ class BugViewSet(ViewSet):
     def create(self, request):
         serializer = BugSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(created_by=request.user)
+            bug = serializer.save(created_by=request.user)
+            
+            notify_bug_created(bug.project.id, BugSerializer(bug).data)
+            
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -93,7 +99,8 @@ class BugViewSet(ViewSet):
 
         serializer = BugSerializer(bug, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save(created_by=request.user)
+            updated_bug = serializer.save(created_by=request.user)
+            notify_bug_updated(updated_bug.project.id, BugSerializer(updated_bug).data)
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -105,6 +112,7 @@ class BugViewSet(ViewSet):
 
         bug.is_deleted = True
         bug.save()
+        notify_bug_closed(bug.project.id, BugSerializer(bug).data)
         return Response({'message': f'Bug {pk} deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
     
     @action(detail=False, methods=['get'], url_path='assigned')
@@ -125,7 +133,8 @@ class CommentViewSet(ViewSet):
     def create(self, request):
         serializer = CommentSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(commenter=request.user)
+            comment = serializer.save(commenter=request.user)
+            notify_comment_added(comment.bug, CommentSerializer(comment).data)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -152,3 +161,20 @@ class CommentViewSet(ViewSet):
             return Response({'detail': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
         comment.delete()
         return Response({'message': 'Comment deleted'}, status=status.HTTP_204_NO_CONTENT)
+    
+# -----------------------------
+# from channels.layers import get_channel_layer
+# from asgiref.sync import async_to_sync
+
+# def notify_bug_created(project_id, bug_data):
+#     channel_layer = get_channel_layer()
+#     async_to_sync(channel_layer.group_send)(
+#         f'project_{project_id}',
+#         {
+#             'type': 'bug_created',
+#             'data': {
+#                 'event': 'bug_created',
+#                 'bug': bug_data
+#             }
+#         }
+#     )

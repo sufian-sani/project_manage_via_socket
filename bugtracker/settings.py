@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,7 +40,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     'rest_framework',
     'channels',
-    'tracker',
+    # 'tracker',
+    'tracker.apps.TrackerConfig',
 ]
 
 REST_FRAMEWORK = {
@@ -56,6 +58,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 # Redis Channel layer
@@ -88,7 +91,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "bugtracker.wsgi.application"
+ASGI_APPLICATION = "bugtracker.wsgi.application"
 
 
 # Database
@@ -137,14 +140,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
+STATICFILES_DIRS = [ BASE_DIR / 'static' ] # Optional, if you have a /static folder
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # Used for collectstatic
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-
-from datetime import timedelta
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
@@ -152,3 +154,12 @@ SIMPLE_JWT = {
 }
 
 APPEND_SLASH=False
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = 'abu7suffian@gmail.com'         # your actual Gmail
+EMAIL_HOST_PASSWORD = 'zdsvmfjasxnkppfd'       # app password (NOT your Gmail password)
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
