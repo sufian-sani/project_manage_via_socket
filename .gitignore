@@ -1,0 +1,45 @@
+# # Python & Django
+# __pycache__/
+# *.py[cod]
+# *.sqlite3
+# *.log
+# *.pot
+# *.pyc
+
+# Virtualenv
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# Django static and media files
+# /staticfiles/
+# media/
+# *.tmp
+
+# # Secrets and config
+# *.env
+# *.ini
+# settings_local.py
+
+# # Migrations
+# */migrations/
+# */migrations/*.py
+# */migrations/*.pyc
+
+# # VS Code
+# .vscode/
+# .history/
+
+# # Node modules & frontend builds (if using React or other FE framework)
+# node_modules/
+# build/
+# dist/
+
+# # IDEs and OS
+# *.swp
+# *.swo
+# .DS_Store
+# Thumbs.db
+# .idea/
