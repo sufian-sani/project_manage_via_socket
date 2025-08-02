@@ -80,8 +80,22 @@ class BugViewSet(ViewSet):
         serializer = BugSerializer(data=request.data)
         if serializer.is_valid():
             bug = serializer.save(created_by=request.user)
+            bug_data = BugSerializer(bug).data
             
-            notify_bug_created(bug.project.id, BugSerializer(bug).data)
+            # ---socket
+            
+            assigned_user_id = bug.assigned_to.id if bug.assigned_to else None
+            project_owner_id = bug.project.owner.id
+            # breakpoint()  # For debugging purposes, can be removed later
+            
+            notify_bug_created(
+                project_id=bug.project.id,
+                bug_data=bug_data,
+                assigned_user_id=assigned_user_id,
+                project_owner_id=project_owner_id
+            )
+            
+            # ---socket
             
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
