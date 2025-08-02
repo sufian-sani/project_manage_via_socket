@@ -2,15 +2,16 @@
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
-def notify_user_comment(id, comment_data):
+def notify_project_comment(id, comment_data):
     channel_layer = get_channel_layer()
     # breakpoint()  # For debugging purposes, can be removed later
     async_to_sync(channel_layer.group_send)(
-        f"user_{id}",
+        f"project_{id}",
         {
-            "type": "send.comment.notification",
+            "type": "send_comment_notification",
             "data": {
-                "event": "comment_notification",
+                "event": "send_comment_notification",
+                "project_id": id,
                 "comment": comment_data
             }
         }

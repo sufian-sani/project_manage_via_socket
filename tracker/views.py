@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from tracker.notifications.notify_bug import notify_bug_created, notify_bug_updated, notify_bug_closed
-from tracker.notifications.notify_comment import notify_user_comment
+from tracker.notifications.notify_comment import notify_project_comment
 from .models import Project, Bug, Comment
 from .serializers import ProjectSerializer, BugSerializer, CommentSerializer
 from django.contrib.auth.models import User
@@ -152,13 +152,14 @@ class CommentViewSet(ViewSet):
             bug = comment.bug
             # breakpoint()
             
+            notify_project_comment(bug.project.id, comment_data)
             # Notify the bug creator
-            if bug.created_by:
-                notify_user_comment(bug.created_by.id, comment_data)
+            # if bug.created_by:
+            #     notify_user_comment(bug.created_by.id, comment_data)
 
             # Notify the assigned user
-            if bug.assigned_to_id:
-                notify_user_comment(bug.assigned_to_id, comment_data)
+            # if bug.assigned_to_id:
+            #     notify_user_comment(bug.assigned_to_id, comment_data)
             
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

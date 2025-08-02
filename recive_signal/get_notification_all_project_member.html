@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebSocket Project Room</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    input {
+      padding: 6px;
+      margin: 5px 0;
+    }
+    button {
+      padding: 8px 12px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .message {
+      border: 1px solid #ccc;
+      border-left: 5px solid #4CAF50;
+      padding: 10px;
+      margin-top: 10px;
+      background-color: #f9f9f9;
+    }
+    #messages {
+      margin-top: 20px;
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Join Project Chat</h1>
+
+  <label for="userIdInput">User ID:</label><br>
+  <input type="text" id="userIdInput" placeholder="Enter User ID"><br><br>
+
+  <label for="projectIdInput">Project ID:</label><br>
+  <input type="text" id="projectIdInput" placeholder="Enter Project ID"><br><br>
+
+  <button onclick="connectWebSocket()">Connect</button>
+
+  <div id="messages"></div>
+
+  <script>
+    let socket;
+
+    function connectWebSocket() {
+      const userId = document.getElementById('userIdInput').value;
+      const projectId = document.getElementById('projectIdInput').value;
+
+      if (!userId || !projectId) {
+        alert("User ID and Project ID are required!");
+        return;
+      }
+
+      const wsUrl = `ws://localhost:8000/ws/bugs/${projectId}/?user_id=${userId}`;
+      socket = new WebSocket(wsUrl);
+
+      socket.onopen = function () {
+        console.log('WebSocket connected');
+        socket.send(JSON.stringify({ message: 'Hello from client!' }));
+      };
+
+      socket.onmessage = function (event) {
+        try {
+          const parsed = JSON.parse(event.data);
+          console.log('Message from server:', parsed);
+
+          const { type, data } = parsed;
+          const messagesDiv = document.getElementById('messages');
+          const msgEl = document.createElement('div');
+          msgEl.classList.add('message');
+
+          if (type === 'bug_created' && data?.bug) {
+            const bug = data.bug;
+            msgEl.innerHTML = `
+              <strong>🪲 Bug Created</strong><br>
+              <strong>Title:</strong> ${bug.title}<br>
+              <strong>Description:</strong> ${bug.description}<br>
+              <strong>Status:</strong> ${bug.status}<br>
+              <strong>Priority:</strong> ${bug.priority}<br>
+              <strong>Assigned To (User ID):</strong> ${bug.assigned_to}<br>
+              <strong>Created By:</strong> ${bug.created_by}<br>
+              <strong>Created At:</strong> ${new Date(bug.created_at).toLocaleString()}
+            `;
+          } else {
+            msgEl.textContent = `📩 Unknown message: ${JSON.stringify(parsed)}`;
+          }
+
+          messagesDiv.appendChild(msgEl);
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        } catch (err) {
+          console.error('Error parsing message:', err);
+        }
+      };
+
+      socket.onclose = function () {
+        console.log('WebSocket closed');
+      };
+
+      socket.onerror = function (error) {
+        console.error('WebSocket error:', error);
+      };
+    }
+  </script>
+
+</body>
+</html>

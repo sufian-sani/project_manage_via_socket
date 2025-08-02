@@ -15,7 +15,7 @@ class ProjectNotificationConsumer(AsyncWebsocketConsumer):
         self.user_id = query_string.get("user_id", [None])[0]
         
         from django.contrib.auth import get_user_model
-        from tracker.models import Project, Bug
+        from tracker.models import Project, Bug, Comment
 
         User = get_user_model()
 
@@ -31,8 +31,14 @@ class ProjectNotificationConsumer(AsyncWebsocketConsumer):
             # Allow if user is owner or has assigned bugs in this project
             is_owner = project.owner_id == user.id
             is_assigned = await sync_to_async(Bug.objects.filter(project=project, assigned_to=user).exists)()
+            is_commenter = await sync_to_async(
+                    Comment.objects.filter(
+                        commenter=user,
+                        bug__project=project
+                    ).exists
+                )()
 
-            if not (is_owner or is_assigned):
+            if not (is_owner or is_assigned or is_commenter):
                 await self.close()
                 return
 
@@ -52,8 +58,26 @@ class ProjectNotificationConsumer(AsyncWebsocketConsumer):
             await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     async def receive(self, text_data):
-        # Optional: process messages sent from frontend
-        pass
+        data = json.loads(text_data)
+        event_type = data.get('event')
+
+        if event_type == 'typing':
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'user_typing',
+                    'user_id': self.user_id
+                }
+            )
+
+        elif event_type == 'stop_typing':
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'user_stop_typing',
+                    'user_id': self.user_id
+                }
+            )
 
     async def bug_created(self, event):
         # breakpoint()  # For debugging purposes, can be removed later
@@ -71,6 +95,24 @@ class ProjectNotificationConsumer(AsyncWebsocketConsumer):
     async def bug_closed(self, event):
         if str(self.project_id) == str(event['data']['bug']['project']):
             await self.send(text_data=json.dumps(event['data']))
+            
+    async def send_comment_notification(self, event):
+        # breakpoint()  # For debugging purposes, can be removed later
+        if str(self.project_id) == str(event['data']['project_id']):
+            await self.send(text_data=json.dumps(event['data']))
+        
+    # for typing
+    async def user_typing(self, event):
+        await self.send(text_data=json.dumps({
+            'event': 'typing',
+            'user_id': event['user_id']
+        }))
+
+    async def user_stop_typing(self, event):
+        await self.send(text_data=json.dumps({
+            'event': 'stop_typing',
+            'user_id': event['user_id']
+        }))
 
 # # consumers.py
 # import json

@@ -1,0 +1,54 @@
+<!-- frontend.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Project Typing Indicator</title>
+  <style>
+    #typingIndicator { color: gray; font-style: italic; }
+    #messages { border: 1px solid #ccc; padding: 10px; height: 200px; overflow-y: auto; }
+  </style>
+</head>
+<body>
+  <h1>Project Chat</h1>
+  <label>Project ID: <input type="text" id="projectId"></label>
+  <label>User ID: <input type="text" id="userId"></label>
+  <button onclick="connect()">Connect</button>
+  <div id="status"></div>
+  <div id="typingIndicator"></div>
+  <div id="messages"></div>
+  <textarea id="commentInput" placeholder="Type a comment..."></textarea>
+
+  <script>
+    let socket;
+    let stopTimeout;
+    function connect() {
+      const projectId = document.getElementById('projectId').value;
+      const userId = document.getElementById('userId').value;
+      if (!projectId || !userId) return alert('Provide both IDs');
+
+      socket = new WebSocket(`ws://localhost:8000/ws/bugs/${projectId}/?user_id=${userId}`);
+      socket.onopen = () => document.getElementById('status').innerText = 'Connected';
+      socket.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        if (data.event === 'typing') {
+          document.getElementById('typingIndicator').innerText = `User ${data.user_id} is typing...`;
+        } else if (data.event === 'stop_typing') {
+          document.getElementById('typingIndicator').innerText = '';
+        }
+      };
+
+      const input = document.getElementById('commentInput');
+      input.addEventListener('input', () => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ event: 'typing' }));
+          clearTimeout(stopTimeout);
+          stopTimeout = setTimeout(() => {
+            socket.send(JSON.stringify({ event: 'stop_typing' }));
+          }, 1000);
+        }
+      });
+    }
+  </script>
+</body>
+</html>
