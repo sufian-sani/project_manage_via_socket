@@ -105,13 +105,13 @@ Open the provided `frontend.html` file in a browser to connect and test.
 A sample HTML frontend is provided to connect via WebSocket, send typing events, and receive bug and comment notifications.
 
 ---
+* Use JWT Auth system
+
+* documentation URL:
+http://127.0.0.1:8000/swagger/
+http://127.0.0.1:8000/redoc/
+
 
 ## Contact
 
 For questions or contributions, please open an issue or pull request.
-
----
-
-documentation URL:
-http://127.0.0.1:8000/swagger/
-http://127.0.0.1:8000/redoc/
