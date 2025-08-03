@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Project Chat</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    #typingIndicator {
+      color: gray;
+      font-style: italic;
+      margin-top: 10px;
+    }
+    #messages {
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 200px;
+      overflow-y: auto;
+      margin-top: 15px;
+    }
+    textarea {
+      width: 100%;
+      margin-top: 10px;
+      height: 60px;
+    }
+    button {
+      margin-top: 10px;
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🪲 Project Realtime Chat</h1>
+
+  <label>Project ID: <input type="text" id="projectId"></label>
+  <label>User ID: <input type="text" id="userId"></label>
+  <button onclick="connect()">Connect</button>
+  <div id="status"></div>
+
+  <div id="typingIndicator"></div>
+  <div id="messages"></div>
+
+  <textarea id="commentInput" placeholder="Type a comment..."></textarea><br>
+  <button onclick="sendComment()">Send Comment</button>
+  <button onclick="sendBug()">Send Bug</button>
+
+  <script>
+    let socket;
+    let stopTimeout;
+
+    function connect() {
+      const projectId = document.getElementById('projectId').value.trim();
+      const userId = document.getElementById('userId').value.trim();
+      if (!projectId || !userId) return alert('Please provide both Project ID and User ID');
+
+      socket = new WebSocket(`ws://localhost:8000/ws/bugs/${projectId}/?user_id=${userId}`);
+
+      socket.onopen = () => {
+        document.getElementById('status').innerText = '✅ Connected to WebSocket';
+      };
+
+      socket.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        const msgBox = document.getElementById("messages");
+
+        if (data.event === "typing") {
+          document.getElementById("typingIndicator").innerText = `🖊️ User ${data.user_id} is typing...`;
+        } else if (data.event === "stop_typing") {
+          document.getElementById("typingIndicator").innerText = '';
+        } else {
+          const p = document.createElement("p");
+          p.innerText = `[${data.event.toUpperCase()}] ${JSON.stringify(data)}`;
+          msgBox.appendChild(p);
+        }
+      };
+
+      socket.onerror = (e) => {
+        document.getElementById('status').innerText = '❌ WebSocket Error';
+        console.error("WebSocket Error:", e);
+      };
+
+      const input = document.getElementById('commentInput');
+      input.addEventListener('input', () => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ event: 'typing' }));
+          clearTimeout(stopTimeout);
+          stopTimeout = setTimeout(() => {
+            socket.send(JSON.stringify({ event: 'stop_typing' }));
+          }, 1000);
+        }
+      });
+    }
+
+    function sendComment() {
+      const userId = document.getElementById('userId').value;
+      const text = document.getElementById('commentInput').value;
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({
+          event: 'comment_added',
+          message: `User ${userId} commented: "${text}"`
+        }));
+      }
+    }
+
+    function sendBug() {
+      const userId = document.getElementById('userId').value;
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({
+          event: 'bug_created',
+          message: `A new bug was reported by User ${userId}`
+        }));
+      }
+    }
+  </script>
+</body>
+</html>

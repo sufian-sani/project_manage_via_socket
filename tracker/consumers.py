@@ -97,7 +97,6 @@ class ProjectNotificationConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps(event['data']))
             
     async def send_comment_notification(self, event):
-        # breakpoint()  # For debugging purposes, can be removed later
         if str(self.project_id) == str(event['data']['project_id']):
             await self.send(text_data=json.dumps(event['data']))
         
