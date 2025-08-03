@@ -161,5 +161,5 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
 EMAIL_HOST_USER = 'abu7suffian@gmail.com'         # your actual Gmail
-EMAIL_HOST_PASSWORD = 'zdsvmfjasxnkppfd'       # app password (NOT your Gmail password)
+EMAIL_HOST_PASSWORD = ''       # app password (NOT your Gmail password)
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
