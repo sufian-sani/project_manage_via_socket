@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'channels',
     # 'tracker',
     'tracker.apps.TrackerConfig',
+    'drf_yasg'
 ]
 
 REST_FRAMEWORK = {

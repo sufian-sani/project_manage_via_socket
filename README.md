@@ -91,10 +91,8 @@ redis-server
 8. **Run the Django application with Uvicorn**
 
 ```bash
-uvicorn your_project_name.asgi:application --reload
+uvicorn bugtracker.asgi:application --reload
 ```
-
-Replace `your_project_name` with your actual Django project folder.
 
 9. **Open frontend**
 
@@ -113,3 +111,7 @@ A sample HTML frontend is provided to connect via WebSocket, send typing events,
 For questions or contributions, please open an issue or pull request.
 
 ---
+
+documentation URL:
+http://127.0.0.1:8000/swagger/
+http://127.0.0.1:8000/redoc/
